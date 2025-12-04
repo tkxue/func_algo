@@ -97,7 +97,9 @@ theorem sorted_sorted' : ∀ lst, Sorted lst → Sorted' lst := by
          simp at h_iv h_jv;
          have h3 := ih 0 (j+1) y jv (by linarith) (by simp) (by tauto)
          linarith
-      | i+1, j+1 => simp at h_iv h_jv; apply ih i j iv jv (by linarith) h_iv h_jv
+      | i+1, j+1 =>
+         simp only [List.getElem?_cons_succ] at h_iv h_jv;
+         apply ih i j iv jv (by linarith) h_iv h_jv
 
 -- ---------------------------------
 
@@ -118,8 +120,8 @@ theorem list_fa_cons : ∀ (f : Nat -> Prop) (x: Nat) (xs: List Nat),
   f x -> List_fa xs f -> List_fa (x :: xs) f := by
   intro f x xs h_fx h_fxs i iv h_iv
   match i with
-  | 0 => simp at h_iv; rw [<- h_iv]; assumption
-  | i+1 => simp at h_iv; exact h_fxs i iv h_iv
+  | 0 => simp? at h_iv; rw [<- h_iv]; assumption
+  | i+1 => simp? at h_iv; exact h_fxs i iv h_iv
 
 
 theorem list_fa_perm : ∀ (l1 l2 : List Nat) (f: Nat -> Prop),
@@ -130,14 +132,14 @@ theorem list_fa_perm : ∀ (l1 l2 : List Nat) (f: Nat -> Prop),
   | @cons x l1 l2 h_l1_l2 ih_l1_l2 =>
       intro h i iv h_iv
       cases i with
-      | zero => simp at h_iv ; have h3 := h 0 iv; simp at h3; apply h3 h_iv;
-      | succ i => simp at h_iv; apply ih_l1_l2 (list_fa_cdr _ _ _ h) i iv h_iv
+      | zero => apply h 0 iv; simpa using h_iv;
+      | succ i => apply ih_l1_l2 (list_fa_cdr _ _ _ h) i iv (by simpa)
   | @swap x y lst =>
       intro h i iv h_iv;
       match i with
-      | 0 => simp at h_iv; have h3 := h 1 iv; simp at h3; apply h3 h_iv
-      | 1 => simp at h_iv; have h3 := h 0 iv; simp at h3; apply h3 h_iv
-      | i+2 => simp at h_iv; have h3 := h (i+2) iv; simp at h3; apply h3 h_iv
+      | 0 => apply (h 1 iv); simpa using h_iv;
+      | 1 => apply (h 0 iv); simpa using h_iv;
+      | i+2 => apply h (i+2) iv; simpa using h_iv;
   | @trans l1 l2 l3 h_l1_l2 h_l2_l3 ih_l1_l2 ih_l2_l3 =>
       intro h; apply ih_l2_l3 (ih_l1_l2 h)
 
@@ -162,10 +164,11 @@ theorem sorted'_cons :
   intro x xs h_xs h_x_xs i j iv jv h_ij h_iv h_jv
   match i, j with
   | i, 0 => simp at h_ij
-  | 0, j+1 => simp at h_iv h_jv; rw [<- h_iv]; apply h_x_xs j jv h_jv
+  | 0, j+1 =>
+      have h_x_iv : x = iv := by simpa using h_iv
+      rw [<- h_x_iv]; apply h_x_xs j jv _; simpa [h_iv, h_jv];
   | i+1, j+1 =>
-      simp at h_iv h_jv;
-      exact h_xs i j iv jv (by linarith) (h_iv) (h_jv)
+      apply h_xs i j iv jv (by linarith) (by simpa) (by simpa)
 
 theorem sorted'_cons_cons :
   ∀ {x0 x1 xs}, x0 ≤ x1 -> Sorted' (x1 :: xs) -> Sorted' (x0 :: x1 :: xs) := by
@@ -211,8 +214,8 @@ theorem elem_in_x_xs : ∀ {t x : Nat} {xs: List Nat},
   elem_in_list t (x :: xs) -> t = x ∨ elem_in_list t xs := by
   intro t x xs ⟨i, hi⟩
   match i with
-  | 0 => simp at hi; rw[hi]; tauto
-  | i+1 => simp at hi; right; exists i
+  | 0 => left; symm; simpa using hi;
+  | i+1 => right; exists i;
 
 theorem elem_in_perm : ∀ {t : Nat} {l1 l2 : List Nat},
   List.Perm l1 l2 -> elem_in_list t l1 -> elem_in_list t l2 := by
@@ -258,10 +261,9 @@ theorem insert_sorted' : ∀ a lst, Sorted' lst → Sorted' (insert a lst) := by
         match i with
         | 0 => simp at h_iv; linarith
         | i+1 =>
-            simp at h_iv;
-            apply h_lst 0 (i+1) x iv (by linarith) (by tauto) h_iv
+            apply h_lst 0 (i+1) x iv (by linarith) (by tauto) _; simpa
 
-theorem sort_sorted': ∀ l, Sorted' (sort l) := by
+theorem sort_sorted' : ∀ l, Sorted' (sort l) := by
   intro l
   induction l with
   | nil => unfold sort; exact sorted'_nil
