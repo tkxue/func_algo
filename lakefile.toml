@@ -10,6 +10,11 @@ weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
 
 [[require]]
+name = "batteries"
+scope = "leanprover-community"
+rev = "main"
+
+[[require]]
 name = "mathlib"
 scope = "leanprover-community"
 
